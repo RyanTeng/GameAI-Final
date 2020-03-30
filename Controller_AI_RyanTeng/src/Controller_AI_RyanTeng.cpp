@@ -39,6 +39,9 @@ static const Vec2 ksDefensiveEast(RIGHT_BRIDGE_CENTER_X, 0.f);
 static const Vec2 ksAggressiveCenter(GAME_GRID_WIDTH / 2.0f, RIVER_TOP_Y - 0.5f);
 static const Vec2 ksDefensiveCenter(GAME_GRID_WIDTH / 2.0f, 0.f);
 
+// threshold where the AI must respond to pressure in a lane
+static const float pressure_threshold = 500.f;
+
 Controller_AI_RyanTeng::Controller_AI_RyanTeng() 
 {
     /* initialize random seed: */
@@ -93,7 +96,7 @@ void Controller_AI_RyanTeng::tick(float deltaTSec)
     bool rand_aggressive = rand() % 2;
 
     switch (this->personality) {
-    case random:
+    case random: {
         if (place_center) {
             if (rand_aggressive) {
                 m_pPlayer->placeMob(chosen_mob, ksAggressiveCenter.Player2Game(isNorth));
@@ -110,7 +113,7 @@ void Controller_AI_RyanTeng::tick(float deltaTSec)
                 m_pPlayer->placeMob(chosen_mob, ksDefensiveWest.Player2Game(isNorth));
             }
         }
-        else 
+        else
         {
             if (rand_aggressive) {
                 m_pPlayer->placeMob(chosen_mob, ksAggressiveEast.Player2Game(isNorth));
@@ -119,38 +122,57 @@ void Controller_AI_RyanTeng::tick(float deltaTSec)
                 m_pPlayer->placeMob(chosen_mob, ksDefensiveEast.Player2Game(isNorth));
             }
         }
+    }
         break;
-    case defensive:
-        // get the Mob with the highest cost available to place this turn. NO IDEA HOW TO DO THIS. Chooses randomly atm.
+    case defensive: {
+        // get the Mob with the highest cost available to place this turn. 
         chosen_mob = m_pPlayer->GetAvailableMobTypes()[rand() % m_pPlayer->GetAvailableMobTypes().size()];
+        float highest_cost = 0.f;
         for (iEntityStats::MobType mob : m_pPlayer->GetAvailableMobTypes()) {
-            // implement some code that finds the highest cost unit to place 
+            const iEntityStats& stats = iEntityStats::getStats(mob);
+            if (highest_cost < stats.getElixirCost()) {
+                if (stats.getElixirCost() < curr_elixir) {
+                    chosen_mob = mob;
+                    highest_cost = stats.getElixirCost();
+                }
+            }
         }
         // place units only if the pressure difference in lanes is too great, or if our elixir is maxxed out.
-        if (this->diff_pressure_west > 0 || (west && curr_elixir >= MAX_ELIXIR)) {
+        if ((this->diff_pressure_west > (pressure_threshold * 0.5) && iEntityStats::getStats(chosen_mob).getElixirCost() < curr_elixir) 
+            || (west && curr_elixir >= MAX_ELIXIR)) {
             m_pPlayer->placeMob(chosen_mob, ksDefensiveWest.Player2Game(isNorth));
         }
         else {
-            if (this->diff_pressure_east > 0 || curr_elixir >= MAX_ELIXIR) {
+            if ((this->diff_pressure_east > (pressure_threshold * 0.5) && iEntityStats::getStats(chosen_mob).getElixirCost() < curr_elixir)
+                || curr_elixir >= MAX_ELIXIR) {
                 m_pPlayer->placeMob(chosen_mob, ksDefensiveEast.Player2Game(isNorth));
             }
         }
+    }
         break;
-    case aggressive:
-        // get the Mob with the lowest cost available to place this turn. NO IDEA HOW TO DO THIS. Chooses randomly atm.
+    case aggressive: {
+        // get the Mob with the lowest cost available to place this turn.
         chosen_mob = m_pPlayer->GetAvailableMobTypes()[rand() % m_pPlayer->GetAvailableMobTypes().size()];
         for (iEntityStats::MobType mob : m_pPlayer->GetAvailableMobTypes()) {
-            // implement some code that finds the lowest cost unit to place 
+            const iEntityStats& stats = iEntityStats::getStats(mob);
+            float lowest_cost = 1000.f;
+            if (lowest_cost > stats.getElixirCost()) {
+                if (stats.getElixirCost() < curr_elixir) {
+                    chosen_mob = mob;
+                    lowest_cost = stats.getElixirCost();
+                }
+            }
         }
         // Places units only in the lane that is winning
         bool west_winning;
         this->diff_pressure_west <= this->diff_pressure_east ? west_winning = true : west_winning = false;
-        if (west_winning) {
+        if (west_winning && iEntityStats::getStats(chosen_mob).getElixirCost() < curr_elixir) {
             m_pPlayer->placeMob(chosen_mob, ksAggressiveWest.Player2Game(isNorth));
         }
-        else {
+        else if (iEntityStats::getStats(chosen_mob).getElixirCost() < curr_elixir) {
             m_pPlayer->placeMob(chosen_mob, ksAggressiveEast.Player2Game(isNorth));
         }
+    }
     }
 }
 

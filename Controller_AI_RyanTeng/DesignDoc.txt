@@ -1,0 +1,22 @@
+First and foremost, I believe a good AI for a real-time 1v1 game like this should be centered around
+the concept of pressure. Specifically, I want to measure how much pressure, or lack there of, the opponent
+is exerting in each of the game's lanes. Personality types could be defined around this pressure value. For
+example, a defensive AI would want to try and defend against pressure being put in their lanes, whilst an 
+aggressive AI might try and push for a great pressure differential between its lanes and its opponents'. 
+I believe this philosophy of centering my AI design around a pressure value would improve the AI's responsiveness
+as well as the fun players would have playing against my AI. I am not coding a win condition for my AI, rather
+I am designing a bot that will respond to the player's actions, or will act in such a way that will require
+a response from the player. This, in theory, would mean that games feel particularly back and forth until the
+greater player wins. Difficulty modulation would also be very easy to implement with this system, as I could 
+just modify how the AI responds to pressure or modify how the AI perceives pressure coming from the opponent.
+This would make "easy" AIs feel slower compared to more difficult bots.
+
+I would personally split the pressure value into the two lanes, east and west. I would measure the value
+by calculating the speed, damage, and health of units on the east or west side of the board and add those
+values to the respective lane's pressure. We could modify this pressure value by a difficulty debuff to 
+change how well the AI perceives pressure. I'm also thinking that there could be a pressure point where
+the AI would consider the opponent to be "rushing" a tower down, where the pressure being put on a lane is
+unusually high, or changes dramatically very quickly. Then the AI would have to respond to this rush based
+on their personality type. I also want to introduce a bit of randomness to my algorithm so that the AI 
+doesn't do the same thing every time, so every tick I might make a roll to see if the AI will place a unit
+of a certain type depending on the pressure, current elixer, and the AI's personality type.
